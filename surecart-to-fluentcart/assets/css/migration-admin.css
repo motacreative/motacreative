@@ -1,0 +1,218 @@
+.sc-fct-wrap {
+    max-width: 800px;
+}
+
+/* Dependencies */
+.sc-fct-dependencies {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.sc-fct-dependencies h2 {
+    margin-top: 0;
+    font-size: 14px;
+}
+
+.sc-fct-dep-grid {
+    display: flex;
+    gap: 16px;
+}
+
+.sc-fct-dep {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    flex: 1;
+}
+
+.sc-fct-dep--ok {
+    background: #edfaef;
+    border: 1px solid #46b450;
+    color: #1e7e34;
+}
+
+.sc-fct-dep--error {
+    background: #fef0f0;
+    border: 1px solid #dc3232;
+    color: #a00;
+}
+
+.sc-fct-dep__icon {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.sc-fct-dep__label {
+    font-weight: 600;
+}
+
+.sc-fct-dep__status {
+    margin-left: auto;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* Migration Panel */
+.sc-fct-migration-panel {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.sc-fct-migration-panel h2 {
+    margin-top: 0;
+    font-size: 14px;
+}
+
+.sc-fct-options {
+    margin-bottom: 20px;
+}
+
+.sc-fct-options label {
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.sc-fct-options select {
+    min-width: 80px;
+}
+
+/* Steps / Progress */
+.sc-fct-steps {
+    margin-bottom: 20px;
+}
+
+.sc-fct-step {
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    transition: border-color 0.2s;
+}
+
+.sc-fct-step--complete {
+    border-color: #46b450;
+    background: #f0faf1;
+}
+
+.sc-fct-step__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.sc-fct-step__name {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.sc-fct-step__count {
+    font-size: 13px;
+    color: #555;
+    font-variant-numeric: tabular-nums;
+}
+
+.sc-fct-progress {
+    height: 8px;
+    background: #dcdcde;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.sc-fct-progress__bar {
+    height: 100%;
+    background: #2271b1;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    min-width: 0;
+}
+
+.sc-fct-step--complete .sc-fct-progress__bar {
+    background: #46b450;
+}
+
+/* Action Buttons */
+.sc-fct-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+/* Status Indicator */
+.sc-fct-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f0f6fc;
+    border: 1px solid #2271b1;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #2271b1;
+}
+
+.sc-fct-status .spinner {
+    float: none;
+    margin: 0;
+}
+
+/* Log Panel */
+.sc-fct-log-panel {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 16px 20px;
+}
+
+.sc-fct-log-panel h2 {
+    margin-top: 0;
+    font-size: 14px;
+}
+
+.sc-fct-log {
+    max-height: 300px;
+    overflow-y: auto;
+    background: #1d2327;
+    color: #c3c4c7;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 12px;
+    border-radius: 4px;
+    min-height: 100px;
+}
+
+.sc-fct-log:empty::before {
+    content: 'Waiting to start...';
+    color: #666;
+    font-style: italic;
+}
+
+.sc-fct-log__entry {
+    padding: 2px 0;
+    word-break: break-word;
+}
+
+.sc-fct-log__entry--error {
+    color: #f87171;
+}
+
+.sc-fct-log__entry--success {
+    color: #4ade80;
+    font-weight: bold;
+}
+
+.sc-fct-log__entry--info {
+    color: #60a5fa;
+}
