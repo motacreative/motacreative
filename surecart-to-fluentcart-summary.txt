@@ -1,0 +1,135 @@
+# SureCart to FluentCart Migration Plugin - Project Summary
+# Generated: 2026-02-17
+
+## Overview
+
+WordPress plugin that migrates products, customers, and orders from SureCart
+(cloud-hosted API) to FluentCart (local WordPress database). Built as a
+standalone plugin that runs on a WordPress site where both SureCart and
+FluentCart are installed.
+
+## Repository
+
+- Branch: claude/surecart-to-fluentcart-migration-DTVTl
+- Commit: 29c26dd - "Add SureCart to FluentCart migration plugin"
+
+## File Structure (12 files, 2,148 lines)
+
+```
+surecart-to-fluentcart/
+├── surecart-to-fluentcart.php              # Main bootstrap, constants, dependency checks, autoloader
+├── includes/
+│   ├── class-migration-activator.php       # Creates sc_fct_migration_map table via dbDelta on activation
+│   ├── class-admin-page.php                # Admin menu page under Tools, renders UI with progress bars
+│   ├── class-ajax-handler.php              # AJAX endpoints: sc_fct_migrate_batch, sc_fct_reset, sc_fct_count
+│   ├── class-id-mapper.php                 # SureCart ID <-> FluentCart ID mapping CRUD (set, get, exists, clear)
+│   ├── class-migration-logger.php          # File-based logging + transient-stored recent errors for UI
+│   └── migrators/
+│       ├── class-base-migrator.php         # Abstract base: fetchBatch(), migrateOne(), processBatch() with idempotency
+│       ├── class-product-migrator.php      # Products: wp_insert_post + fct_product_details + fct_product_variations + image sideloading + taxonomy
+│       ├── class-customer-migrator.php     # Customers: fct_customers + fct_customer_addresses, email dedup, WP user linking
+│       └── class-order-migrator.php        # Orders: fct_orders + fct_order_items + fct_order_transactions + fct_order_addresses
+└── assets/
+    ├── js/migration-admin.js               # Vanilla JS: AJAX batch loop, progress bars, error display, log panel
+    └── css/migration-admin.css             # Admin page styling: dependency indicators, progress bars, dark log panel
+```
+
+## How It Works
+
+1. Plugin adds a page under Tools > SC to FCT Migration in WordPress admin
+2. Admin UI shows dependency status (SureCart active, FluentCart active)
+3. User selects batch size (5/10/20/50) and clicks "Start Migration"
+4. JavaScript sends sequential AJAX requests, processing one batch at a time
+5. Migration runs in mandatory order: Products → Customers → Orders
+   (orders depend on both products and customers via the mapping table)
+6. Each batch reads from SureCart's PHP models (cloud API calls) and writes
+   directly to FluentCart's database tables
+7. Progress bars update in real-time; errors are logged but don't stop the batch
+8. Re-running migration safely skips already-imported records (idempotent)
+
+## Data Flow
+
+### Source: SureCart (Cloud API)
+- Products: SureCart\Models\Product::with(['prices', 'product_medias', 'product_medias.media', 'product_collections'])->paginate()
+- Customers: SureCart\Models\Customer::with(['billing_address', 'shipping_address'])->paginate()
+- Orders: SureCart\Models\Order::with(['checkout', 'checkout.customer', 'checkout.line_items', 'checkout.line_items.price', 'checkout.charges', 'checkout.billing_address', 'checkout.shipping_address'])->paginate()
+
+### Destination: FluentCart (Local DB)
+- Products → wp_posts (CPT: fluent-products) + wp_fct_product_details + wp_fct_product_variations
+- Product images → WordPress media library (sideloaded from SureCart CDN)
+- Product collections → product-categories taxonomy terms
+- Customers → wp_fct_customers + wp_fct_customer_addresses
+- Orders → wp_fct_orders + wp_fct_order_items + wp_fct_order_transactions + wp_fct_order_addresses
+
+### Mapping Table (wp_sc_fct_migration_map)
+Tracks which SureCart entities have been imported and their FluentCart IDs:
+- entity_type: 'product', 'customer', 'order', 'variant', 'collection'
+- surecart_id: SureCart UUID string
+- fluentcart_id: FluentCart integer ID
+
+## Field Mappings
+
+### Products
+- name → post_title
+- description → post_content
+- slug → post_name
+- archived → post_status (false=publish, true=draft)
+- product_medias.media → WordPress media library (featured image + gallery meta)
+- product_collections → product-categories taxonomy
+- Each price object → fct_product_variations row (item_price, compare_price, payment_type=onetime)
+- Min/max prices → fct_product_details (min_price, max_price)
+- Single/multiple prices → variation_type (simple vs simple_variations)
+
+### Customers
+- email → email (with deduplication check)
+- first_name/last_name → first_name/last_name
+- billing_address fields → country, city, state, postcode
+- WordPress user lookup by email → user_id
+- billing_address → fct_customer_addresses (type=billing)
+- shipping_address → fct_customer_addresses (type=shipping)
+
+### Orders
+- checkout.customer → customer_id (resolved via mapping table)
+- checkout.total_amount → total_amount (cents)
+- checkout.tax_amount → tax_total
+- checkout.discount_amount → coupon_discount_total
+- checkout.currency → currency (uppercase 3-letter)
+- checkout.status → status + payment_status (mapped)
+- line_items → fct_order_items (product/variant resolved via mapping)
+- charges → fct_order_transactions
+- billing/shipping addresses → fct_order_addresses
+
+### Status Mapping (SureCart → FluentCart)
+- paid → status: completed, payment_status: paid
+- pending → status: on-hold, payment_status: pending
+- payment_failed → status: failed, payment_status: failed
+- canceled/void → status: canceled, payment_status: failed
+- refunded → status: canceled, payment_status: refunded
+- partially_refunded → status: completed, payment_status: partially_refunded
+
+## Key Design Decisions
+
+1. Direct DB writes (not REST API) - faster, no auth overhead, matches FluentCart's own patterns
+2. AJAX batches (not WP-Cron) - real-time progress feedback in admin UI
+3. Idempotent - mapping table prevents duplicate imports on re-run
+4. Lock mechanism - transient-based lock prevents concurrent migration runs
+5. Image sideloading - downloads SureCart CDN images into local WordPress media library
+6. One-time purchases only - no subscription/recurring price handling (per user requirement)
+7. All monetary values in cents - both SureCart and FluentCart use BIGINT cents, no conversion needed
+
+## Security
+
+- Nonce verification on all AJAX endpoints
+- Capability check (manage_options) on all admin actions
+- Input sanitization on all POST parameters
+- File logging in wp-content/uploads/sc-fct-migration/
+
+## Usage Instructions
+
+1. Copy surecart-to-fluentcart/ folder to wp-content/plugins/
+2. Activate the plugin (requires both SureCart and FluentCart to be active)
+3. Navigate to Tools > SC to FCT Migration
+4. Verify both dependency indicators show green
+5. Select batch size and click "Start Migration"
+6. Monitor progress bars and activity log
+7. Use "Reset Migration Data" to clear tracking data if needed (does NOT delete imported FluentCart records)
